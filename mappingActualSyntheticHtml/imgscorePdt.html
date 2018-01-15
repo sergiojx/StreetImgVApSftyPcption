@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    
+    <script src="./imageScorePdt.js"></script>
+    <script src="./chapinero.js"></script>
+    <script>
+      function getHeatMapColor(value)
+      {
+        var NUM_COLORS = 3;
+        var color =[
+          [1,0,0],
+          [1,1,0],
+          [0,1,0]
+        ];
+        
+          // A static array of 3 colors:  (red,  yellow,  green) using {r,g,b} for each.
+       
+        var idx1;        // |-- Our desired color will be between these two indexes in "color".
+        var idx2;        // |
+        var fractBetween = 0;  // Fraction between "idx1" and "idx2" where our value is.
+       
+        if(value <= 0)      {  idx1 = idx2 = 0;            }    // accounts for an input <=0
+        else if(value >= 1)  {  idx1 = idx2 = NUM_COLORS-1; }    // accounts for an input >=0
+        else
+        {
+          value = value * (NUM_COLORS-1);        // Will multiply value by 3.
+          idx1  = Math.floor(value);                  // Our desired color will be after this index.
+          idx2  = idx1+1;                        // ... and before this index (inclusive).
+          fractBetween = value - idx1;    // Distance between the two indexes (0-1).
+        }
+        var red   = (color[idx2][0] - color[idx1][0])*fractBetween + color[idx1][0];
+        var green = (color[idx2][1] - color[idx1][1])*fractBetween + color[idx1][1];
+        var blue  = (color[idx2][2] - color[idx1][2])*fractBetween + color[idx1][2];
+        red = Math.floor(red*255);
+        green = Math.floor(green*255);
+        blue = Math.floor(blue*255);
+        return [red, green, blue];
+       
+      }
+
+      function pinSymbol(color) {
+          return {
+              path: 'M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0',
+              fillColor: color,
+              fillOpacity: 1,
+              strokeColor: '#000',
+              strokeWeight: 0.1,
+              scale: 0.05,
+         };
+      }
+      function perimeterSymbol(color) {
+          return {
+              path: 'M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0',
+              fillColor: color,
+              fillOpacity: 1,
+              strokeColor: '#000',
+              strokeWeight: 0.1,
+              scale: 0.009,
+         };
+      }
+      var map;
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 4.654144, lng: -74.062414},
+          zoom: 17,
+          mapTypeId: 'terrain'
+        });
+
+        
+        var infowindow = new google.maps.InfoWindow();
+        var marker
+        var baseImgPath = "/Users/SerG1oAC/Documents/dbintroUdacity/fullstack/vagrant/ggStreetView/map/localidades/chapinero/imgs/"
+  
+        
+        for (var j = 0; j < colorImgScorePdt.length; j++) {
+          var beach = colorImgScorePdt[j];
+          var cr = Math.floor((beach["nv"]*255)/100);
+          var cg = Math.floor((beach["pv"]*255)/100);
+          var cb = Math.floor((beach["zv"]*255)/100);
+          
+          var gradRGB = getHeatMapColor(beach["pv"]/100)
+          //var imgRGB = "RGB(" + cr + "," + cg + "," + cb + ")";
+          var imgRGB = "RGB(" + gradRGB[0] + "," + gradRGB[1] + "," + gradRGB[2] + ")";
+          
+          //console.log(imgRGB);
+          marker = new google.maps.Marker({
+            position: {lat: beach["lat"], lng: beach["log"]},
+            map: map,
+            icon: pinSymbol(imgRGB)
+          });
+          google.maps.event.addListener(marker, 'click', (function(marker, j) {
+            return function() {
+              var baseHtml = '<div id="lalocu">'+
+              '   <img src="p12tH-IMG" alt="Flowers in Chania" width="600" height="300">'+
+              '</div> '+
+              '<div id="lalocuScore">'+
+              '<p><strong>p12tH-PER%</strong></p>'+
+              '</div>';
+              var imgPath = baseImgPath + colorImgScorePdt[j]["name"]
+              var iHtml = baseHtml.replace("p12tH-IMG", imgPath);
+              var finalHtml = iHtml.replace("p12tH-PER", colorImgScorePdt[j]["pv"]);
+              infowindow.setContent(finalHtml);
+              infowindow.open(map, marker);
+            }
+          })(marker, j));
+        } 
+
+        var image2 = './path4258.png'
+        for (var j = 0; j < set_chapinero_boundary.length; j++) {
+          var beach = set_chapinero_boundary[j];
+          marker = new google.maps.Marker({
+            position: {lat: beach["lat"], lng: beach["log"]},
+            map: map,
+            icon: perimeterSymbol("RGB(224,255,255)")
+          });
+        }  
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={CopyYourKeyHere}&callback=initMap"
+    async defer></script>
+  </body>
+</html>
